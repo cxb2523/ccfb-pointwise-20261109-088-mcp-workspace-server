@@ -12,6 +12,8 @@
 9. list_excel_templates - 列出Excel模板
 10. create_excel_from_template - 从模板创建Excel
 11. generate_image - 生成图像（数据图表、Mermaid流程图或HTML渲染）
+12. media_probe - 探测图片/音频元数据（尺寸、时长等）
+13. media_thumbnail - 生成图片缩略图（user_data缓存）
 """
 
 import json
@@ -61,6 +63,11 @@ from .tools.excel_tools import (
 from .tools.exec_tools import exec_command as _exec_command
 from .tools.replace_tools import fs_replace as _fs_replace
 from .tools.image_tools import generate_image as _generate_image
+from .media import MediaOperations
+from .tools.media_tools import (
+    media_probe as _media_probe,
+    media_thumbnail as _media_thumbnail,
+)
 
 logger = get_logger(__name__)
 
@@ -167,6 +174,11 @@ def _is_web_search_enabled() -> bool:
 
 def _is_web_crawl_enabled() -> bool:
     cfg = load_config().get("web_crawl", {})
+    return bool(cfg.get("enabled", True))
+
+
+def _is_media_enabled() -> bool:
+    cfg = load_config().get("media", {})
     return bool(cfg.get("enabled", True))
 
 
@@ -327,6 +339,17 @@ async def get_session_components(ctx: Context) -> Dict[str, Any]:
             config=config,
         )
 
+    media_ops = None
+    if _is_media_enabled():
+        default_user_data_dir = Path(__file__).parent.parent / "user_data"
+        user_data_dir = Path(os.environ.get("MCP_WORKSPACES_DIR", str(default_user_data_dir)))
+        media_ops = MediaOperations(
+            validator,
+            config.get("media", {}),
+            workspace_root=workspace_path,
+            cache_root=user_data_dir,
+        )
+
     components = {
         "validator": validator,
         "operations": operations,
@@ -335,6 +358,7 @@ async def get_session_components(ctx: Context) -> Dict[str, Any]:
         "excel": excel,
         "command": command_executor,
         "preview": preview_manager,
+        "media": media_ops,
         "allowed_dirs": validator.get_allowed_dirs(),
         "workspace_path": workspace_path if virtual_root else None,
     }
@@ -914,3 +938,63 @@ async def generate_image(
     except Exception as e:
         logger.error(f"generate_image error: {type(e).__name__}: {e}", exc_info=True)
         return f"Error: {sanitize_error_simple(e)}"
+
+
+# ========== 媒体工具 (2个) ==========
+
+if _is_media_enabled():
+    @mcp.tool()
+    async def media_probe(
+        path: Annotated[str, Field(description="workspace相对路径，如 'pics/cat.png' 或 'rec/a.mp3'")],
+        ctx: Context,
+    ) -> Any:
+        """探测图片/音频元数据（图片尺寸/格式、音频时长/采样率等），不整读文件。
+
+        Examples:
+            media_probe("photos/cat.png")        # 返回 width/height/format/mode
+            media_probe("recordings/voice.mp3")  # 返回 duration_seconds/sample_rate/bitrate
+        """
+        try:
+            components = await get_session_components(ctx)
+            media = components.get("media")
+            if media is None:
+                return safe_json_response({
+                    "success": False,
+                    "error": "media_disabled",
+                    "message": "Media tools are not enabled.",
+                })
+            result = await _media_probe(path=path, media_ops=media)
+            return safe_json_response(result, path)
+        except Exception as e:
+            logger.error(f"media_probe error for path '{path}': {type(e).__name__}: {e}", exc_info=True)
+            return f"Error: {sanitize_error_simple(e, path)}"
+
+
+    @mcp.tool()
+    async def media_thumbnail(
+        path: Annotated[str, Field(description="workspace相对图片路径，如 'pics/cat.png'")],
+        ctx: Context,
+        max_size: Annotated[int, Field(description="缩略图最长边像素，默认128")] = 128,
+    ) -> Any:
+        """生成图片缩略图并写入 user_data 缓存目录；同一文件的多个软链入口复用同一份缓存。
+
+        Examples:
+            media_thumbnail("photos/cat.png")
+            media_thumbnail("photos/cat.png", max_size=256)
+        """
+        try:
+            components = await get_session_components(ctx)
+            media = components.get("media")
+            if media is None:
+                return safe_json_response({
+                    "success": False,
+                    "error": "media_disabled",
+                    "message": "Media tools are not enabled.",
+                })
+            result = await _media_thumbnail(path=path, max_size=max_size, media_ops=media)
+            return safe_json_response(result, path)
+        except Exception as e:
+            logger.error(f"media_thumbnail error for path '{path}': {type(e).__name__}: {e}", exc_info=True)
+            return f"Error: {sanitize_error_simple(e, path)}"
+else:
+    logger.info("media tools disabled via config (media.enabled=false)")

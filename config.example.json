@@ -38,6 +38,22 @@
     "max_table_chars": 20000,
     "max_doc_chars": 20000
   },
+  "media": {
+    "enabled": true,
+    "cache_dir": ".cache/media",
+    "max_file_size_mb": 200,
+    "default_thumbnail_size": 128,
+    "max_thumbnail_size": 1024,
+    "max_image_pixels": 40000000,
+    "allowed_extensions": {
+      "image": [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"],
+      "audio": [".wav", ".mp3"]
+    },
+    "_comment_cache_dir": "缩略图缓存目录，相对路径基于 user_data；只写该目录，临时文件+os.replace 原子落盘。",
+    "_comment_max_file_size_mb": "超过该大小的媒体文件在 stat 阶段直接拒绝，不读取文件内容。",
+    "_comment_max_image_pixels": "缩略图解码前的解压像素上限（宽*高），防止解压炸弹。",
+    "_comment_allowed_extensions": "媒体类型白名单；音频优先用 mutagen 解析，未安装时降级解析 WAV/MP3 文件头。"
+  },
   "lint": {
     "enabled": true,
     "linters": {

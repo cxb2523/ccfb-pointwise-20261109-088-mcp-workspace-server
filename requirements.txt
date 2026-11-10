@@ -35,6 +35,9 @@ pillow>=10.0.0
 pytesseract>=0.3.10
 mermaid-py>=0.3.0
 
+# === Media Metadata (optional) ===
+# mutagen>=1.46.0  # 可选：音频元数据解析；未安装时 media 工具降级为 WAV/MP3 文件头解析
+
 # === Document Processing ===
 PyPDF2>=3.0.0
 python-docx>=1.0.0

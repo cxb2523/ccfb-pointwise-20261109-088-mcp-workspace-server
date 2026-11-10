@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Filesystem Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/admin/styles.css">
+</head>
+<body>
+  <div id="login-overlay" class="overlay">
+    <div class="card">
+      <h2>管理员登录</h2>
+      <p>请输入 Admin 密码以查看文件使用情况。</p>
+      <input id="password-input" type="password" placeholder="密码" />
+      <button id="login-btn">登录</button>
+      <div id="login-error" class="error"></div>
+    </div>
+  </div>
+
+  <header>
+    <h1>Filesystem 监控面板</h1>
+    <div class="status">
+      <span id="status-text">未连接</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="tree-panel">
+      <div class="panel-header">
+        <h3>文件树</h3>
+        <div class="hint">显示文件名、创建时间、大小</div>
+      </div>
+      <div id="tree-container"></div>
+    </section>
+    <div id="divider" class="divider" title="拖动调整宽度"></div>
+    <section id="preview-panel">
+      <div class="panel-header">
+        <h3 id="preview-title">预览</h3>
+        <button id="close-preview" title="关闭预览">✕</button>
+      </div>
+      <div id="preview-body" class="preview-body">点击左侧文件进行预览</div>
+    </section>
+  </main>
+
+  <script src="/admin/app.js"></script>
+</body>
+</html>

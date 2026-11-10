@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Filesystem - 智能文件系统服务</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --dark-bg: #0f172a;
+            --dark-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* 导航栏 */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero 区域 */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding-top: 80px;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--dark-card);
+            color: var(--text-primary);
+            border: 2px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* Section 通用样式 */
+        section {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            margin-bottom: 4rem;
+        }
+
+        /* 功能特性网格 */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--dark-card);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* 工作区查看器展示 */
+        .viewer-showcase {
+            background: var(--dark-card);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            margin-top: 3rem;
+        }
+
+        .viewer-preview {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .viewer-preview img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 快速开始 */
+        .quick-start {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .step-card {
+            background: var(--dark-card);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            position: relative;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -20px;
+            left: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .step-card h3 {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .code-block {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            margin-top: 1rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            color: #a5f3fc;
+        }
+
+        /* API 展示 */
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .api-card {
+            background: var(--dark-card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s;
+        }
+
+        .api-card:hover {
+            transform: translateX(5px);
+            border-left-color: var(--secondary);
+        }
+
+        .api-method {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .method-get {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .method-post {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .api-card h4 {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .api-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+            margin-top: 6rem;
+        }
+
+        footer p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        /* 动画 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .features-grid,
+            .quick-start,
+            .api-grid {
+                grid-template-columns: 1fr;
+            }
+
+            section {
+                padding: 4rem 1rem;
+            }
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--dark-card);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">MCP Filesystem</div>
+            <ul class="nav-links">
+                <li><a href="#features">功能</a></li>
+                <li><a href="#viewer">工作区查看器</a></li>
+                <li><a href="#quickstart">快速开始</a></li>
+                <li><a href="#api">API</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero 区域 -->
+    <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+            <h1>MCP Filesystem</h1>
+            <p>智能文件系统服务 | 为 AI 应用提供强大的文件管理能力</p>
+            <div class="hero-buttons">
+                <a href="#quickstart" class="btn btn-primary">快速开始</a>
+                <a href="#viewer" class="btn btn-secondary">查看演示</a>
+                <a href="https://github.com/answerlink/MCP-Workspace-Server" class="btn btn-secondary" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能特性 -->
+    <section id="features">
+        <h2 class="section-title">核心功能</h2>
+        <p class="section-subtitle">为 AI 应用量身打造的文件系统服务</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📁</div>
+                <h3>文件操作</h3>
+                <p>支持完整的文件系统操作，包括读写、移动、删除、搜索等。基于 MCP 协议，让 AI 助手轻松管理文件。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>智能预览</h3>
+                <p>支持 Markdown、Excel、图片、PDF 等多种文件格式的预览和转换。自动识别文件类型，提供最佳展示方式。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🐍</div>
+                <h3>代码执行</h3>
+                <p>沙盒化的 Python 代码执行环境，支持数据处理、分析和可视化。自动管理依赖和资源限制。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Excel 处理</h3>
+                <p>强大的 Excel 读写能力，支持公式、格式化、批量操作。从模板创建到数据导出，一站式解决。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>图表生成</h3>
+                <p>支持 Matplotlib、Mermaid 等图表生成工具。从数据到图表，自动化可视化流程。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>前端预览</h3>
+                <p>内置开发服务器，支持 HTML/CSS/JS 项目的实时预览。自动分配端口，支持热重载。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>安全隔离</h3>
+                <p>基于 user_id + chat_id 的工作区隔离，确保数据安全。支持路径验证、资源限制和网络隔离。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>高性能</h3>
+                <p>异步 I/O 设计，支持大文件流式传输。智能缓存机制，优化重复访问性能。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <h3>HTTP API</h3>
+                <p>完整的 RESTful API，支持文件上传、下载、预览等操作。易于集成到任何应用。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 工作区查看器 -->
+    <section id="viewer">
+        <h2 class="section-title">工作区查看器</h2>
+        <p class="section-subtitle">直观的文件管理界面</p>
+
+        <div class="viewer-showcase">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📂</div>
+                    <h3>文件浏览</h3>
+                    <p>树形结构展示所有文件和文件夹，支持展开/折叠，实时搜索过滤。</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">👁️</div>
+                    <h3>实时预览</h3>
+                    <p>Markdown 完整渲染，图片缩放查看，代码语法高亮，Excel 表格展示。</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📤</div>
+                    <h3>文件上传</h3>
+                    <p>支持点击上传和拖拽上传，多文件批量上传，实时显示上传进度。</p>
+                </div>
+            </div>
+
+            <div class="viewer-preview" style="margin-top: 2rem;">
+                <div style="text-align: center; padding: 4rem; color: var(--text-secondary);">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🖼️</div>
+                    <p>工作区查看器界面预览</p>
+                    <p style="margin-top: 1rem;">访问 <code style="color: var(--primary);">/workspace/viewer</code> 查看完整功能</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 快速开始 -->
+    <section id="quickstart">
+        <h2 class="section-title">快速开始</h2>
+        <p class="section-subtitle">三步部署，立即使用</p>
+
+        <div class="quick-start">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>克隆仓库</h3>
+                <p>获取最新版本的代码</p>
+                <div class="code-block">
+                    <code>git clone https://github.com/answerlink/MCP-Workspace-Server.git
+cd MCP-Workspace-Server</code>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>配置环境</h3>
+                <p>复制并编辑配置文件</p>
+                <div class="code-block">
+                    <code>cp config.example.json config.json
+# 编辑 config.json 设置参数</code>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>启动服务</h3>
+                <p>使用 Docker Compose 一键启动</p>
+                <div class="code-block">
+                    <code>docker-compose up -d
+# 服务运行在 http://localhost:18089</code>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 3rem; text-align: center;">
+            <h3 style="margin-bottom: 1rem;">访问服务</h3>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <div class="code-block" style="display: inline-block;">
+                    <code>工作区查看器: http://localhost:18089/workspace/viewer</code>
+                </div>
+                <div class="code-block" style="display: inline-block;">
+                    <code>健康检查: http://localhost:18089/health</code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API 文档 -->
+    <section id="api">
+        <h2 class="section-title">API 文档</h2>
+        <p class="section-subtitle">简单易用的 RESTful API</p>
+
+        <div class="api-grid">
+            <div class="api-card">
+                <span class="api-method method-get">GET</span>
+                <h4>/api/workspace/tree</h4>
+                <p>获取工作区文件树结构</p>
+            </div>
+
+            <div class="api-card">
+                <span class="api-method method-get">GET</span>
+                <h4>/api/workspace/file/download</h4>
+                <p>下载单个文件</p>
+            </div>
+
+            <div class="api-card">
+                <span class="api-method method-get">GET</span>
+                <h4>/api/workspace/file/preview</h4>
+                <p>预览文件内容</p>
+            </div>
+
+            <div class="api-card">
+                <span class="api-method method-post">POST</span>
+                <h4>/api/workspace/file/upload</h4>
+                <p>上传文件到工作区</p>
+            </div>
+
+            <div class="api-card">
+                <span class="api-method method-post">POST</span>
+                <h4>/api/workspace/file/update</h4>
+                <p>更新文本文件内容</p>
+            </div>
+
+            <div class="api-card">
+                <span class="api-method method-post">POST</span>
+                <h4>/api/workspace/file/delete</h4>
+                <p>删除文件或文件夹</p>
+            </div>
+
+            <div class="api-card">
+                <span class="api-method method-get">GET</span>
+                <h4>/api/workspace/download</h4>
+                <p>下载整个工作区（ZIP）</p>
+            </div>
+
+            <div class="api-card">
+                <span class="api-method method-post">POST</span>
+                <h4>/api/workspace/exec</h4>
+                <p>执行 Python 代码</p>
+            </div>
+
+            <div class="api-card">
+                <span class="api-method method-get">GET</span>
+                <h4>/api/workspace/image/{path}</h4>
+                <p>获取图片资源</p>
+            </div>
+        </div>
+
+        <div style="margin-top: 3rem; text-align: center;">
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">所有 API 都需要 user_id 和 chat_id 参数</p>
+            <div class="code-block" style="max-width: 600px; margin: 0 auto;">
+                <code>GET /api/workspace/tree?user_id=USER&chat_id=CHAT</code>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技术栈 -->
+    <section>
+        <h2 class="section-title">技术栈</h2>
+        <p class="section-subtitle">基于现代化技术构建</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>🐍 Python + FastMCP</h3>
+                <p>基于 MCP 协议的高性能异步服务框架</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🚀 Starlette</h3>
+                <p>轻量级 ASGI 框架，支持 HTTP 和 WebSocket</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🐳 Docker</h3>
+                <p>容器化部署，一键启动，环境隔离</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>📊 Pandas + Openpyxl</h3>
+                <p>强大的数据处理和 Excel 操作能力</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎨 Matplotlib</h3>
+                <p>专业的数据可视化图表生成</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🔧 Marked.js</h3>
+                <p>完整的 Markdown 渲染支持</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 MCP Filesystem. All rights reserved.</p>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            智能文件系统服务 · 为 AI 应用而生
+        </p>
+        <div class="footer-links">
+            <a href="#features">功能特性</a>
+            <a href="#viewer">工作区查看器</a>
+            <a href="#quickstart">快速开始</a>
+            <a href="#api">API 文档</a>
+            <a href="https://github.com/answerlink/MCP-Workspace-Server" target="_blank">GitHub</a>
+        </div>
+    </footer>
+
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 滚动动画
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card, .step-card, .api-card').forEach(el => {
+            el.style.opacity = '0';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
+

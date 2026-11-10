@@ -1,0 +1,18 @@
+[
+  {
+    "title": "Project_Tracker.xlsx",
+    "desc": "Project task tracking template with status, priority, and timeline",
+    "source": "/app/excel_templates/Project_Tracker.xlsx"
+  },
+  {
+    "title": "Budget_Template.xlsx",
+    "desc": "Simple budget planning template with income and expense categories",
+    "source": "/app/excel_templates/Budget_Template.xlsx"
+  },
+  {
+    "title": "Data_Collection.xlsx",
+    "desc": "Generic data collection template for surveys and forms",
+    "source": "/app/excel_templates/Data_Collection.xlsx"
+  }
+]
+

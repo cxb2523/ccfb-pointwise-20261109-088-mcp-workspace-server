@@ -1,0 +1,111 @@
+{
+  "admin_token": "your-secret-admin-token-here",
+  "security": {
+    "sensitive_path_patterns": [],
+    "_comment": "Additional path patterns that should never appear in tool responses. Default patterns (user_data, /home/, etc.) are always included."
+  },
+  "mcp": {
+    "transport": "sse",
+    "host": "0.0.0.0",
+    "port": 18089
+  },
+  "command": {
+    "enabled": true,
+    "network_isolated": true,
+    "limits": {
+      "max_memory_mb": 2048,
+      "max_cpu_seconds": 60,
+      "max_file_size_mb": 100,
+      "max_processes": 32,
+      "timeout_seconds": 60
+    }
+  },
+  "preview": {
+    "enabled": true,
+    "max_active_previews": 2000,
+    "external_host": "localhost",
+    "wildcard_domain": "*.proxy.domain.com",
+    "use_tls": false,
+    "_comment_wildcard_domain": "Optional: Wildcard domain for subdomain-based routing (e.g., '*.proxy.your_domain.com'). Each preview gets a unique subdomain. Set to null if not using wildcard domains.",
+    "_comment_max_active_previews": "Maximum number of active preview mappings to keep (also caps restoration on restart). When exceeded, the least recently used preview is evicted.",
+    "_comment_use_tls": "Whether to use TLS for preview URLs. If true, the preview URLs will be https:// instead of http://."
+  },
+  "admin_web": {
+    "enabled": false,
+    "password": "123456"
+  },
+  "fs": {
+    "max_table_chars": 20000,
+    "max_doc_chars": 20000
+  },
+  "lint": {
+    "enabled": true,
+    "linters": {
+      "python": {
+        "enabled": true,
+        "use_pyflakes": true,
+        "_comment": "Python语法检查使用ast（零依赖），代码质量检查使用pyflakes（可选）"
+      },
+      "json": {
+        "enabled": true,
+        "strict": true,
+        "_comment": "JSON格式验证使用json.loads（零依赖）"
+      },
+      "html": {
+        "enabled": true,
+        "check_xss": true,
+        "_comment": "HTML结构验证和XSS安全检查"
+      },
+      "svg": {
+        "enabled": true,
+        "_comment": "SVG的XML格式验证（零依赖）"
+      }
+    },
+    "_comment": "文件Lint校验配置。校验结果不会阻止文件写入，而是作为反馈信息返回给智能体。"
+  },
+  "kb": {
+    "base_url": "http://localhost:3000",
+    "token": "your-secret-token-here",
+    "max_read_chars": 20000,
+    "chunk_search": {
+      "limit": 20000,
+      "similarity": 0.4,
+      "searchMode": "embedding"
+    },
+    "enabled": false
+  },
+  "web_search": {
+    "base_url": "https://api.bochaai.com/v1/web-search",
+    "token": "your-secret-token-here",
+    "default_count": 10,
+    "freshness": "noLimit",
+    "summary": true,
+    "enabled": false
+  },
+  "web_crawl": {
+    "max_markdown_chars": 20000,
+    "timeout_seconds": 30,
+    "enabled": false
+  },
+  "excel": {
+    "max_file_size_mb": 50,
+    "default_max_rows": 1000,
+    "supported_formats": [".xlsx", ".xls", ".csv"],
+    "enable_formulas": true,
+    "templates_file": "excel_templates/templates.json"
+  },
+  "image_generator": {
+    "chart_api_endpoint": "http://localhost:8000/render",
+    "chart_default_width": 1200,
+    "chart_default_height": 800,
+    "mermaid_default_theme": "forest",
+    "mermaid_format": "svg",
+    "base_url": "",
+    "_comment_chart_api_endpoint": "图表生成API端点，用于生成数据图表。Mermaid图表使用本地mermaid-py渲染。",
+    "_comment_chart_default_width": "图表默认宽度（像素），可在调用时覆盖",
+    "_comment_chart_default_height": "图表默认高度（像素），可在调用时覆盖",
+    "_comment_mermaid_default_theme": "Mermaid默认主题，可选：default/dark/forest/neutral",
+    "_comment_mermaid_format": "Mermaid输出格式，可选：svg 或 png",
+    "_comment_base_url": "图片访问的基础URL，用于生成完整的图片访问地址。如果不设置，返回相对路径。"
+  }
+}

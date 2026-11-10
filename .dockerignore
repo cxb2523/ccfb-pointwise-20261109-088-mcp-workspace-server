@@ -1,0 +1,70 @@
+# User session data (mounted via volume, not needed in build context)
+user_data/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+
+# IDE and editor files
+.idea/
+.vscode/
+.vs_code/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Config files with secrets (mounted via volume)
+config.json
+
+# Excel templates (mounted via volume)
+excel_templates/*.xlsx
+excel_templates/templates.json
+
+# Docker files
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Other artifacts
+context/
+AI_CHANGELOG.md
+CLAUDE.md
+.aider*
+notebooks/
+jupyter/
+mcp-chart-python/
+
+# Build artifacts
+_build/
+*.log
+

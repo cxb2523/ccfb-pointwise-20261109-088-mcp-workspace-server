@@ -1,0 +1,69 @@
+# MCP Filesystem Server - Docker Compose Configuration
+#
+# 生产部署流程:
+#   1. 首次部署: docker-compose up -d --build
+#   2. 更新代码: git pull && docker-compose restart
+#   3. 更新依赖: docker-compose up -d --build (仅依赖变化时需要)
+#
+# 说明:
+#   - 镜像包含运行环境 (Python/Node.js/依赖库)
+#   - 代码通过 volume 挂载，git pull 后 restart 即生效
+#   - 无热重载，重启后加载新代码
+
+services:
+  mcp-filesystem:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcp-filesystem:2.1
+    container_name: mcp-filesystem
+    mem_limit: 6g
+    mem_reservation: 512m
+    
+    ports:
+      # MCP Server
+      - "18089:18089"
+      - "18099:18089"
+    
+    volumes:
+      # 用户数据
+      - ./user_data:/user_data_jaxckqcdxlyyodcpwd
+      # 配置文件
+      - ./config.json:/app/config.json:ro
+      # 代码挂载 - git pull 后 restart 生效
+      - ./mcp_filesystem:/app/mcp_filesystem:ro
+      - ./excel_templates:/app/excel_templates:ro
+      - ./static:/app/static:ro
+      - ./portal:/app/portal:ro
+      - ./pyproject.toml:/app/pyproject.toml:ro
+      # 时区配置
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    
+    environment:
+      - FASTMCP_HOST=0.0.0.0
+      - FASTMCP_PORT=18089
+      - MCP_WORKSPACES_DIR=/user_data_jaxckqcdxlyyodcpwd
+    
+    # Health Check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18089/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    
+    # Restart Policy
+    restart: unless-stopped
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  default:
+    name: mcp-network
+    driver: bridge
